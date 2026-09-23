@@ -37,6 +37,15 @@ def test_openai_compatible_response_is_normalized():
     assert normalize_response("openai-compatible", payload) == {"answers": {"operation": {"choice": "DONE"}}}
 
 
+def test_codex_subscription_needs_no_api_key(monkeypatch):
+    monkeypatch.setenv("JEV_DECISION_PROVIDER", "codex-cli")
+    monkeypatch.delenv("JEV_DECISION_API_KEY", raising=False)
+    monkeypatch.delenv("TYPESAFE_API_KEY", raising=False)
+    config = provider_config()
+    assert config.url == "codex://subscription"
+    assert config.model == "subscription-default"
+
+
 def test_missing_provider_key_fails_closed(monkeypatch):
     monkeypatch.setenv("JEV_DECISION_PROVIDER", "openai-compatible")
     monkeypatch.delenv("JEV_DECISION_API_KEY", raising=False)

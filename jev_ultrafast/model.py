@@ -7,7 +7,7 @@ import time
 
 import httpx
 
-from .model_provider import build_request, normalize_response, provider_config
+from .model_provider import provider_config, request_decision
 from .questions import NEXT_ACTION, TARGET, TEXT_VALUE
 
 CLIENT = httpx.Client(http2=True, timeout=25)
@@ -117,9 +117,8 @@ def choose(state, goal, history):
         "questions": questions,
     }
     config = provider_config()
-    request = build_request(config, body)
     started = time.perf_counter()
-    result = normalize_response(config.provider, post_json(config.url, config.api_key, request))
+    result = request_decision(config, body, post_json)
     result.setdefault("model", config.model)
     operation_answer = validate_choice(result["answers"].get("operation", {}), operations)
     operation = operation_answer["choice"]
