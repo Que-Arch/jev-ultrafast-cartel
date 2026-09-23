@@ -81,8 +81,14 @@ def _parse_codex_json(text: str) -> dict:
         candidate = candidate.split("\n", 1)[1].rsplit("```", 1)[0].strip()
     try:
         result = json.loads(candidate)
-    except json.JSONDecodeError as exc:
-        raise RuntimeError("Codex returned invalid Jev JSON; no action executed.") from exc
+    except json.JSONDecodeError:
+        start, end = candidate.find("{"), candidate.rfind("}")
+        if start < 0 or end <= start:
+            raise RuntimeError("Codex returned invalid Jev JSON; no action executed.") from None
+        try:
+            result = json.loads(candidate[start : end + 1])
+        except json.JSONDecodeError as exc:
+            raise RuntimeError("Codex returned invalid Jev JSON; no action executed.") from exc
     if not isinstance(result, dict) or "answers" not in result:
         raise RuntimeError("Codex returned no Jev answers; no action executed.")
     return result
