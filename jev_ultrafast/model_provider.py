@@ -97,16 +97,21 @@ def _parse_codex_json(text: str) -> dict:
 def request_decision(config: ProviderConfig, body: dict, http_post) -> dict:
     if config.provider != "codex-cli":
         return normalize_response(config.provider, http_post(config.url, config.api_key, build_request(config, body)))
+    codex_body = json.loads(json.dumps(body))
+    page = codex_body.get("state", {}).get("page", {})
+    if isinstance(page.get("text"), str):
+        page["text"] = page["text"][:6000]
     prompt = (
         "You are the decision engine inside Jev. Do not use tools and do not browse. "
         "Return JSON only with an `answers` object matching the questions in the supplied state. "
         "For every choice answer, include exactly: choice, probabilities, confidence. "
         "probabilities must contain every candidate ID exactly once, use numbers from 0 to 1, "
         "sum to 1, and make the selected choice the highest probability. confidence must be "
-        "a number from 0 to 1. Choose only an observed operation and observed target. "
-        "Never invent selectors, coordinates, URLs, shell commands or code. "
+        "number from 0 to 1. If the goal says to finish when the page is observed and the page "
+        "is already observed, choose DONE immediately. Choose only an observed operation and "
+        "observed target. Never invent selectors, coordinates, URLs, shell commands or code. "
         "This output will be validated before any browser action.\n\n"
-        + json.dumps(body)
+        + json.dumps(codex_body)
     )
     with tempfile.TemporaryDirectory(prefix="jev-codex-") as directory:
         output = Path(directory) / "last-message.json"
