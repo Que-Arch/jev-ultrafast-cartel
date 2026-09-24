@@ -7,6 +7,7 @@ import time
 
 import httpx
 
+from .model_provider import provider_config, request_decision
 from .questions import NEXT_ACTION, TARGET, TEXT_VALUE
 
 CLIENT = httpx.Client(http2=True, timeout=25)
@@ -115,8 +116,10 @@ def choose(state, goal, history):
         },
         "questions": questions,
     }
+    config = provider_config()
     started = time.perf_counter()
-    result = post_json("https://api.typesafe.ai/v1/systemone", os.environ["TYPESAFE_API_KEY"], body)
+    result = request_decision(config, body, post_json)
+    result.setdefault("model", config.model)
     operation_answer = validate_choice(result["answers"].get("operation", {}), operations)
     operation = operation_answer["choice"]
     target = None
